@@ -1,0 +1,4 @@
+interface:
+  display_name: "Novel Writer"
+  short_description: "Write long novels with consistency"
+  default_prompt: "Use $novel-writer to start a new novel project"
