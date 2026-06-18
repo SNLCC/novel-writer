@@ -25,10 +25,10 @@ suspense-tracking.md（追踪：每章更新）
 ```bash
 # 方式 1：通过 Codex 安装
 # 在 Codex 对话中输入：
-/install-skill https://github.com/<你的用户名>/novel-writer
+/install-skill https://github.com/SNLCC/novel-writer
 
 # 方式 2：手动安装
-git clone https://github.com/<你的用户名>/novel-writer.git
+git clone https://github.com/SNLCC/novel-writer.git
 cp -r novel-writer ~/.codex/skills/novel-writer
 ```
 
@@ -102,10 +102,6 @@ stories/我的小说/
 检查循环（每卷/每10章）
   check_consistency → 修问题 → 继续写
 ```
-
-## 适用平台
-
-支持番茄小说、起点、晋江等主流网文平台。Skill 内置了各平台的节奏策略和读者留存技巧。
 
 ## 许可证
 
