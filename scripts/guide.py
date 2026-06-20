@@ -164,6 +164,21 @@ def list_all_novels(stories_root):
 
 # ── 主逻辑 ──────────────────────────────────────────────────
 
+
+def check_skill_version():
+    try:
+        skill_md = Path(__file__).resolve().parent.parent / 'SKILL.md'
+        if skill_md.exists():
+            text = skill_md.read_text(encoding='utf-8')
+            import re
+            m = re.search(r'version:\s*(\S+)', text)
+            if m:
+                return m.group(1)
+    except Exception:
+        pass
+    return 'unknown'
+
+
 def diagnose(novel_path, stories_root):
     """全面诊断并输出引导"""
     meta = get_meta(novel_path)
@@ -406,6 +421,19 @@ def main():
         print(f"\n  📖 共享库洞察（跨项目经验）：")
         for si in shared_insights:
             print(f"     • {si}")
+    # 显示 skill 版本
+    skill_ver = check_skill_version()
+    print(f'  Skill 版本: v{skill_ver}')
+
+    # 检查是否有共享数据
+    shared_dir = stories_root / '.shared'
+    if shared_dir.exists():
+        pf = shared_dir / 'platform-data.md'
+        if pf.exists():
+            pf_text = pf.read_text(encoding='utf-8')
+            if '用户提供' not in pf_text and len(pf_text) > 300:
+                print(f'  [INFO] 已加载用户积累的平台数据')
+
     diagnose(novel_path, stories_root)
 
 

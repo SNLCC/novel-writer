@@ -115,6 +115,23 @@ stories/我的小说/
   check_consistency → 修问题 → 继续写
 ```
 
+
+
+## 升级
+
+skill 目录与用户数据物理隔离，更新不会影响小说项目：
+
+`
+skill 目录（更新时替换）        用户数据（永不触碰）
+scripts/ references/           stories/  ← 所有小说 + 积累数据
+`
+
+**更新命令**：
+\\\\\ash
+/install-skill https://github.com/SNLCC/novel-writer
+\\\\
+详见 [UPGRADE.md](UPGRADE.md)。
+
 ## 许可证
 
 MIT
