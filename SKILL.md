@@ -1,6 +1,7 @@
 ---
 name: novel-writer
-description: 长篇小说创作助手，通过故事圣经、多层大纲、人物档案、悬念追踪四大系统的强制联动确保设定一致性。支持多部小说管理。当用户需要：（1）创建新小说项目并搭建世界观/大纲/人物体系，（2）逐章写作并保持情节连贯，（3）检查角色/剧情/伏笔一致性，（4）为网文平台优化节奏和钩子设计时使用。
+version: 1.0.0
+description: 长篇小说创作助手，通过故事圣经、多层大纲、人物档案、悬念追踪七大系统的强制联动确保设定一致性。支持多部小说管理。当用户需要：（1）创建新小说项目并搭建世界观/大纲/人物体系，（2）逐章写作并保持情节连贯，（3）检查角色/剧情/伏笔一致性，（4）为网文平台优化节奏和钩子设计时使用。
 ---
 
 # Novel Writer
@@ -33,7 +34,7 @@ guide.py 输出什么？
 │
 ├─ "第一卷大纲: empty"
 │   → 逐章讨论 arc-01.md 的钩子类型和核心冲突
-│   → 此时加载 references/reader-retention.md，确保钩子设计符合平台规律
+│   → 此时加载 references/reader-retention.md，确保钩子设计有效
 │
 ├─ [设定完成，章节数 = N]
 │   → 运行 init_chapter.py N+1
@@ -59,9 +60,16 @@ guide.py 输出什么？
 ### `references/platform-research.md`
 **触发条件**（满足任一即加载）：
 - 用户说要创建新小说、且尚未确定平台/类型
-- 用户提到「番茄」「起点」「晋江」等平台名
+- 用户提到"免费阅读类平台"「起点」"女性向类平台"等平台名
 - guide.py 显示「还没有任何小说项目」
 - 用户在设定阶段、尚未完成竞品采样
+
+### `references/scene-consistency.md`（待创建）
+**触发条件**（满足任一即加载）：
+- 写到已建档场景时，自动加载对应 scenes/*.md 档案
+- 用户提到「场景」「地点」「环境描写」「场景漂移」
+- check_scenes.py 输出警告时
+- 新建场景时，参照已有场景锚点格式
 
 ### `references/reader-retention.md`
 **触发条件**（满足任一即加载）：
@@ -92,10 +100,11 @@ guide.py 输出什么？
 ```
 
 **数据流规则**：
-- 任何新设定 → 先写 story-bible.md，再写章节
+- 任何新设定 → 先运行 `append_bible.py` 追加到 story-bible.md（自动去重），再写章节
 - 任何人物变化 → 同步更新 characters/<名字>.md 的出场记录表
-- 任何悬念 → 必须登记到 suspense-tracking.md，必须有回收计划
-- 禁止孤儿悬念（超过计划回收章 10 章仍未回收）
+- 任何场景变化 → 同步更新 scenes/<场景名>.md 的出场记录和描写锚点
+- 任何悬念/线索/伏笔 → 必须登记到 suspense-tracking.md，标注类型，必须有回收计划
+- 禁止孤儿条目（超过计划揭示章 10 章仍未处理）
 
 ---
 
@@ -126,11 +135,13 @@ python scripts/guide.py                                  # 诊断状态
 ```
 ① python scripts/init_chapter.py <N>     ← 生成 PRE-FLIGHT + 草稿
 ② python scripts/validate_preflight.py <N>  ← ⚠️ 强制检查！不通过不写
-③ 实际阅读 4 份文件（story-bible / outline arc / suspense / characters）
+③ 实际阅读 5 份文件（story-bible / outline arc / suspense / characters / scenes）
 ④ 在章节文件中勾选 PRE-FLIGHT 清单，写正文
-⑤ python scripts/update_suspense.py --chapter <N>  ← 悬念回收 + 新埋
-⑥ 同步：圣经/人物档案/元信息如有变化立即更新
-⑦ 标记章节为「已完成」
+⑤ python scripts/update_suspense.py --chapter <N>  ← 悬念/线索/伏笔回收 + 新埋
+⑥ 同步：圣经（append_bible.py）/ 人物档案 / 场景档案 / 元信息变化立即更新
+⑦ 运行 retention_check.py <N> 自检留存质量
+⑧ 标记章节为「已完成」
+⑨ （每5章）运行 update_meta.py 同步元信息和时间线
 ```
 
 > ⚠️ **PRE-FLIGHT 是硬约束**：步骤② `validate_preflight.py` 返回非 0 则**不得开始写正文**。必须先确认钩子类型、前300字冲突、4 份文件、悬念回收都已完成。
@@ -170,22 +181,35 @@ python scripts/check_consistency.py
 |------|------|------|
 | `guide.py` | 状态诊断 + 下一步引导 | 每次触发先跑 |
 | `new_novel.py` | 创建新小说 + 设为当前 | — |
-| `list_novels.py` | 列出所有 + 切换当前 | — |
+| `list_novels.py` | 列出所有 + 切换当前（同步 master-index.md） | — |
 | `init_chapter.py` | 生成 PRE-FLIGHT + 章节草稿 | — |
 | `validate_preflight.py` | 🆕 PRE-FLIGHT 强制验证 | **写正文前必须通过** |
 | `init_character.py` | 创建人物档案 | — |
+| `init_scene.py` | 🆕 创建场景档案 | 有新场景时 |
 | `new_arc.py` | 按需生成新卷大纲 | — |
-| `check_consistency.py` | 5 项一致性检查（含人物弧线） | 每卷/每10章 |
-| `update_suspense.py` | 交互式悬念追踪 | 每章写完后 |
+| `append_bible.py` | 🆕 追加设定到故事圣经（自动去重） | 写章节冒出新设定时 |
+| `retention_check.py` | 🆕 章节留存质量自检（8项评分） | 每章写完后 |
+| `check_consistency.py` | 7 项一致性检查（含人物/场景/线索） | 每卷/每10章 |
+| `check_scenes.py` | 🆕 场景漂移检测 | 每5章或写到已建档场景时 |
+| `update_meta.py` | 🆕 自动更新 meta.md + timeline.md | 每章或每5章 |
+| `review.py` | 🆕 结构化复盘引导（卷/全书/章节批） | 每卷/每部完结 |
+| `sync_library.py` | 🆕 跨项目模式提取到共享库 | 每部小说完结后 |
+| `evolve.py` | 🧬 Skill 自我进化引擎 | 积累多部小说数据后 |
+| `track_clue.py` | 🆕 悬念/线索/伏笔统一管理 | 需要查看/检查线索时 |
+| `update_suspense.py` | 交互式悬念追踪（支持类型标注） | 每章写完后 |
 
 ---
 
 ## 关键原则
 
-1. **故事圣经 = 唯一权威**
+1. **故事圣经 = 唯一权威**（所有设定先追加到圣经，再写入章节）
 2. **终点不可擅改**（核心事件 + 弧线终点需用户确认）
-3. **悬念永不过期**（必须有回收计划，超 10 章报警）
+3. **悬念/线索/伏笔永不过期**（必须有回收计划，超 10 章报警，线索链必须完整）
 4. **PRE-FLIGHT 不可跳过**（validate_preflight.py 是硬约束）
 5. **人物弧线不可遗忘**（check_consistency.py 检测 10 章以上未更新的人物）
-6. **参考文档按触发条件加载**（不用等用户主动提）
-7. **用户有最终决定权**
+6. **场景描写不可漂移**（写到已建档场景时，必须对照锚点，变化须同步场景档案）
+
+9. **复盘不可省略**（每卷结束后运行 review.py，每部完结后运行 sync_library.py）
+10. **共享库持续进化**（跨项目经验自动沉淀到 .shared/pattern-library.md）
+11. **Skill 自我进化**（每部小说完结后运行 evolve.py --apply，自动优化参考文档和策略）（写到已建档场景时，必须对照锚点，变化须同步场景档案）
+

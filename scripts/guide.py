@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+﻿#!/usr/bin/env python3
 """
 guide.py — 项目状态诊断与下一步引导
 
@@ -288,6 +288,29 @@ def diagnose(novel_path, stories_root):
             "cmd": "python scripts/check_consistency.py",
         })
 
+    # 复盘提示
+    chapters_dir = novel_path / "chapters"
+    total_chs = len(list(chapters_dir.glob("ch-*.md"))) if chapters_dir.exists() else 0
+    if total_chs > 0 and total_chs % 10 == 0 and total_chs > 0:
+        steps.append({
+            "urgency": "soon",
+            "title": f"10章复盘（已写 {total_chs} 章）",
+            "detail": "运行章节批量复盘，检查质量和节奏。",
+            "cmd": "python scripts/review.py --type chapter",
+        })
+
+    # 完结小说提示
+    meta_file = novel_path / "meta.md"
+    if meta_file.exists():
+        meta_text = meta_file.read_text(encoding="utf-8")
+        if "已完结" in meta_text:
+            steps.append({
+                "urgency": "now",
+                "title": "运行全书复盘 + 同步共享库",
+                "detail": "小说已完结！运行复盘沉淀经验，同步模式到共享库。",
+                "cmd": "python scripts/review.py --type novel && python scripts/sync_library.py",
+            })
+
     # 多小说提示
     if len(all_novels) > 1:
         current_name = novel_path.name
@@ -341,12 +364,37 @@ def main():
         print(f"  Stories 目录: {stories_root}")
         print(f"\n  创建第一部小说：")
         print(f"  python scripts/new_novel.py <小说名> --path {stories_root}")
+
+        # 检查共享库中是否有经验
+        shared_dir = stories_root / ".shared"
+        lib_file = shared_dir / "pattern-library.md"
+        if lib_file.exists():
+            lib_text = lib_file.read_text(encoding="utf-8")
+            # 检查是否有实质内容
+            if "暂无共享模式" not in lib_text and len(lib_text) > 500:
+                print(f"\n  📖 共享库中已有跨项目经验，新项目将自动受益。")
+                print(f"     运行 python scripts/evolve.py 查看进化建议。")
         print()
         return
+
+    # 检查共享库
+    shared_dir = stories_root / ".shared"
+    lib_file = shared_dir / "pattern-library.md"
+    shared_insights = []
+    if lib_file.exists():
+        lib_text = lib_file.read_text(encoding="utf-8")
+        # 提取最近的进化建议
+        evo_matches = re.findall(r'\[(.+?)\]\s*(.+?)(?=\n\s*→)', lib_text)
+        for cat, finding in evo_matches[-3:]:
+            shared_insights.append(f"{cat}: {finding[:60]}")
 
     # 情况2：有小说但没指定当前
     if not novel_path:
         print(f"\n  找到 {len(all_novels)} 部小说，但没有设置「当前小说」。")
+        if shared_insights:
+            print(f"\n  📖 共享库最近洞察：")
+            for si in shared_insights:
+                print(f"     • {si}")
         print(f"\n  请选择：")
         for n in all_novels:
             print(f"  python scripts/list_novels.py --path {stories_root} --set {n.name}")
@@ -354,6 +402,10 @@ def main():
         return
 
     # 情况3：正常诊断
+    if shared_insights:
+        print(f"\n  📖 共享库洞察（跨项目经验）：")
+        for si in shared_insights:
+            print(f"     • {si}")
     diagnose(novel_path, stories_root)
 
 

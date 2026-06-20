@@ -261,6 +261,84 @@ def check_outline_completion(novel_path):
 
 
 # ── 主入口 ──────────────────────────────────────────────────
+def check_scene_drift(novel_path):
+    """检查场景档案是否与章节一致"""
+    issues = []
+    scenes_dir = novel_path / "scenes"
+    if not scenes_dir.exists() or not list(scenes_dir.glob("*.md")):
+        return issues
+
+    chapters_dir = novel_path / "chapters"
+    chapter_files = sorted(chapters_dir.glob("ch-*.md")) if chapters_dir.exists() else []
+
+    scene_files = [f for f in scenes_dir.glob("*.md") if not f.name.startswith(".")]
+
+    # 检查每个场景档案是否有出场记录
+    for sf in scene_files:
+        text = sf.read_text(encoding="utf-8")
+        # Count appearance records
+        appearances = len(re.findall(r"\|\s*ch-\d+", text))
+        if appearances == 0:
+            issues.append(f"场景「{sf.stem}」无出场记录，可能未在章节中使用或漏记")
+        elif chapter_files and appearances < len(chapter_files) * 0.05:
+            # Very low appearance rate - might be stale
+            pass
+
+    return issues
+
+
+def check_clue_tracking(novel_path):
+    """检查线索追踪表完整性"""
+    issues = []
+    tf = novel_path / "notes" / "suspense-tracking.md"
+    if not tf.exists():
+        return issues
+
+    content = tf.read_text(encoding="utf-8")
+    header_kw = {"编号", "类型", "内容", "埋设章", "计划揭示章", "状态"}
+
+    entries = []
+    for line in content.split("\n"):
+        if any(kw in line for kw in header_kw):
+            continue
+        if "---" in line or not line.strip():
+            continue
+        if "|" not in line:
+            continue
+        parts = [p.strip() for p in line.split("|")]
+        parts = [p for p in parts if p]
+        if len(parts) < 7:
+            continue
+        # Skip placeholders
+        if parts[1] in ("[类型]", "类型"):
+            continue
+        content_val = parts[2] if len(parts) > 2 else ""
+        if content_val.startswith("[") and content_val.endswith("]"):
+            continue
+
+        status = parts[6] if len(parts) > 6 else "?"
+        planned = parts[4] if len(parts) > 4 else "?"
+        entry_type = parts[1] if len(parts) > 1 else "?"
+
+        if "未回收" in status:
+            m = re.search(r"(\d+)", planned)
+            if m:
+                planned_ch = int(m.group(1))
+                chapters_dir = novel_path / "chapters"
+                max_ch = len(list(chapters_dir.glob("ch-*.md"))) if chapters_dir.exists() else 0
+                if max_ch > 0 and max_ch - planned_ch > 10:
+                    issues.append(
+                        f"孤儿{entry_type} S{planned_ch}: {content_val[:30]} "
+                        f"（超期 {max_ch - planned_ch} 章）"
+                    )
+                elif max_ch > 0 and max_ch - planned_ch > 5:
+                    issues.append(
+                        f"即将过期{entry_type} S{planned_ch}: {content_val[:30]} "
+                        f"（超期 {max_ch - planned_ch} 章）"
+                    )
+
+    return issues
+
 
 def main():
     parser = argparse.ArgumentParser(description="设定一致性检查")

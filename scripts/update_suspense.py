@@ -109,18 +109,24 @@ def update_suspense_file(novel_path, chapter_num):
     print("\n--- 新埋悬念 ---")
     new_entries = []
     while True:
-        content_input = input("  新悬念内容（空行结束）: ").strip()
+        content_input = input("  新条目内容（空行结束）: ").strip()
         if not content_input:
             break
-        plan_ch = input(f"  计划在第几章回收？(默认 {chapter_num + 10}): ").strip()
+        entry_type = input("  类型？(1=悬念 2=线索 3=伏笔，默认1): ").strip()
+        type_map = {"1": "悬念", "2": "线索", "3": "伏笔"}
+        entry_type_str = type_map.get(entry_type, "悬念")
+        plan_ch = input(f"  计划在第几章揭示/回收？(默认 {chapter_num + 10}): ").strip()
         if not plan_ch:
             plan_ch = str(chapter_num + 10)
+        character = input("  关联人物（可选）: ").strip() or "—"
+        linked = input("  关联悬念编号（可选）: ").strip() or "—"
 
         new_id = f"S{chapter_num:02d}-{len(new_entries) + 1:02d}"
         new_entries.append(
-            f"| {new_id} | {content_input} | {ch_str} "
-            f"| ch-{int(plan_ch):02d} | — | 未回收 |"
+            f"| {new_id} | {entry_type_str} | {content_input} | {ch_str} "
+            f"| ch-{int(plan_ch):02d} | — | 未回收 | {character} | {linked} |"
         )
+        print(f"    已添加 [{new_id}] {entry_type_str}：{content_input}")
         print(f"    已添加 [{new_id}] {content_input}")
 
     # 步骤3：更新文件
@@ -129,7 +135,7 @@ def update_suspense_file(novel_path, chapter_num):
         updated = False
         for e in entries:
             if e["id"] in recovered_ids and e["id"] in line:
-                line = line.replace("未回收", "已回收").replace("部分回收", "已回收")
+                line = line.replace("未回收", "已回收").replace("部分回收", "已回收").replace("未揭示", "已揭示")
                 # 更新实际回收章
                 parts = line.split("|")
                 if len(parts) >= 6:

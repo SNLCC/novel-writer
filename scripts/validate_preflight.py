@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+﻿#!/usr/bin/env python3
 """
 validate_preflight.py — 验证章节 PRE-FLIGHT 清单是否已确认
 
@@ -95,6 +95,19 @@ def validate(chapter_file, novel_path):
                     break
         if not found:
             issues.append(f"缺少: {label} 的检查项")
+
+    # 检查 1b：场景档案是否被标记已读
+    has_scene_check = False
+    for line in preflight_section.split("\n"):
+        if "scenes/" in line:
+            if "[x]" in line.lower():
+                has_scene_check = True
+                break
+            if "[ ]" in line:
+                issues.append("场景描写锚点: 清单未勾选")
+                has_scene_check = True
+                break
+    # 如果章节没有场景检查项，不算错误（可能本章无已知场景）
 
     # 检查 2：钩子类型是否已确认
     hook_line = ""

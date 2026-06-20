@@ -1,16 +1,17 @@
-#!/usr/bin/env python3
+﻿#!/usr/bin/env python3
 """
 list_novels.py — 列出所有小说项目及其状态
 
 用法:
     python list_novels.py [--path <stories目录>] [--set <小说名>]
 
---set 将指定小说设为「当前小说」（写入 .current-novel）。
+--set 将指定小说设为「当前小说」（同步更新 master-index.md 和 .current-novel）。
 """
 
 import argparse
 import re
 from pathlib import Path
+from datetime import datetime
 
 
 def parse_meta(meta_file: Path) -> dict:
@@ -20,6 +21,7 @@ def parse_meta(meta_file: Path) -> dict:
         "status": "?",
         "chapters": "?",
         "updated": "?",
+        "created": "?",
     }
     if not meta_file.exists():
         return info
@@ -30,6 +32,7 @@ def parse_meta(meta_file: Path) -> dict:
         "status": r'\*\*状态\*\*\s*\|\s*(.+)',
         "chapters": r'\*\*当前章节\*\*\s*\|\s*(.+)',
         "updated": r'\*\*最后更新\*\*\s*\|\s*(.+)',
+        "created": r'\*\*创建日期\*\*\s*\|\s*(.+)',
     }
     for key, pat in patterns.items():
         m = re.search(pat, text)
@@ -57,6 +60,72 @@ def get_current_novel(stories_path: Path) -> str | None:
     return None
 
 
+def update_master_index(stories_path: Path, current_name=None):
+    """同步 master-index.md，自动创建如果不存在"""
+    index_file = stories_path / "master-index.md"
+    today = datetime.now().strftime("%Y-%m-%d")
+
+    novels = sorted([d for d in stories_path.iterdir()
+                     if d.is_dir() and not d.name.startswith(".")])
+
+    # Build novel rows
+    rows = []
+    for i, nd in enumerate(novels, 1):
+        meta = parse_meta(nd / "meta.md")
+        completed = count_completed_chapters(nd / "chapters")
+        total_ch = len(list((nd / "chapters").glob("ch-*.md"))) if (nd / "chapters").exists() else 0
+        rows.append(
+            f"| {i} | {nd.name} | {meta['type']} | {meta['status']} "
+            f"| {completed} | {total_ch} | {meta.get('created', '?')} "
+            f"| {meta.get('updated', '?')} | {nd.name}/ |"
+        )
+
+    total_n = len(novels)
+    ongoing = sum(1 for nd in novels if "连载" in parse_meta(nd / "meta.md").get("status", ""))
+    finished = sum(1 for nd in novels if "完结" in parse_meta(nd / "meta.md").get("status", ""))
+    total_chs = sum(
+        len(list((nd / "chapters").glob("ch-*.md")))
+        for nd in novels if (nd / "chapters").exists()
+    )
+
+    current_display = current_name or get_current_novel(stories_path) or "—"
+
+    new_content = f"""# 📚 小说项目总索引
+
+> **当前小说**：{current_display}
+> **最后更新**：{today}
+
+---
+
+## 项目列表
+
+| # | 书名 | 类型 | 状态 | 已完成章 | 总章数 | 创建日期 | 最后更新 | 路径 |
+|---|------|------|------|----------|--------|----------|----------|------|
+{chr(10).join(rows) if rows else '|   |      |      |      |          |        |          |          |      |'}
+
+---
+
+## 跨项目统计
+
+| 指标 | 数值 |
+|------|------|
+| **总项目数** | {total_n} |
+| **连载中** | {ongoing} |
+| **已完结** | {finished} |
+| **累计章节数** | {total_chs} |
+| **累计字数（估）** | — |
+
+---
+
+> **规则**：
+> - `**当前小说**` 标记决定 guide / init_chapter 等脚本的目标项目
+> - 每次新建/切换项目时 `list_novels.py` 自动更新本文件
+> - `.current-novel` 与本索引保持同步（向后兼容）
+"""
+
+    index_file.write_text(new_content, encoding="utf-8")
+
+
 def set_current_novel(stories_path: Path, novel_name: str):
     target = stories_path / novel_name
     if not target.exists():
@@ -64,6 +133,7 @@ def set_current_novel(stories_path: Path, novel_name: str):
         return
     pointer = stories_path / ".current-novel"
     pointer.write_text(str(target.resolve()), encoding="utf-8")
+    update_master_index(stories_path, novel_name)
     print(f"[OK] 当前小说已设为: {novel_name}")
 
 
@@ -101,6 +171,9 @@ def list_novels(stories_path: Path):
     print(f"共 {len(novels)} 部小说  |  > = 当前小说")
     if not current:
         print("  提示：python list_novels.py --set <小说名> 设置当前小说")
+
+    # 同步 master-index.md
+    update_master_index(stories_path, current)
 
 
 def main():

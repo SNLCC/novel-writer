@@ -188,6 +188,16 @@ def generate_chapter(novel_path, chapter_num, arc_num):
         novel_path / "notes" / "suspense-tracking.md", chapter_num
     )
 
+    # 检测本章可能涉及的场景
+    scene_reminders = []
+    scenes_dir = novel_path / "scenes"
+    if arc_file and arc_file.exists():
+        arc_text = arc_file.read_text(encoding="utf-8")
+        if scenes_dir.exists():
+            for sf in scenes_dir.glob("*.md"):
+                if sf.stem in arc_text and not sf.name.startswith("."):
+                    scene_reminders.append(sf.stem)
+    
     # 发现本章可能涉及的人物
     character_reminders = []
     chars_dir = novel_path / "characters"
@@ -255,7 +265,7 @@ def generate_chapter(novel_path, chapter_num, arc_num):
 [3-5句话概括本章核心内容]
 
 ### 新设定
-- [如有新增设定，必须同步到 story-bible.md]
+- [如有新增设定，运行 python scripts/append_bible.py --section <分区> --content "<设定>" 追加到 story-bible.md（自动去重）]
 
 ### 人物变化
 - [行为 / 关系 / 状态的改变，必须同步到对应人物档案]
