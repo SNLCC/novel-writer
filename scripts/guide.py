@@ -20,6 +20,14 @@ import sys
 from pathlib import Path
 
 
+from _utils import resolve_stories_root, resolve_novel_path
+
+
+# ── 路径解析 ────────────────────────────────────────────────
+
+STORY_BIBLE_MARKER = "story-bible.md"
+
+
 def resolve_novel_path(explicit_path):
     if explicit_path:
         n = Path(explicit_path).resolve()
@@ -149,7 +157,7 @@ def find_stories_root(novel_path):
     """从 novel_path 向上找到 stories 根目录"""
     p = novel_path.resolve()
     # novel 目录下应该有 story-bible.md
-    if (p / "story-bible.md").exists():
+    if (p / STORY_BIBLE_MARKER).exists():
         return p.parent  # stories 根
     return p
 
@@ -159,7 +167,7 @@ def list_all_novels(stories_root):
         return []
     return sorted([d for d in stories_root.iterdir()
                    if d.is_dir() and not d.name.startswith(".")
-                   and (d / "story-bible.md").exists()])
+                   and (d / STORY_BIBLE_MARKER).exists()])
 
 
 # ── 主逻辑 ──────────────────────────────────────────────────
@@ -358,11 +366,11 @@ def diagnose(novel_path, stories_root):
 def main():
     parser = argparse.ArgumentParser(description="项目状态诊断与引导")
     parser.add_argument("--novel", default=None, help="小说项目目录")
-    parser.add_argument("--path", default="./stories", help="stories 根目录")
+    parser.add_argument("--path", default=None, help="stories 根目录（默认自动探测到项目根目录）")
     args = parser.parse_args()
 
     novel_path = resolve_novel_path(args.novel)
-    stories_root = Path(args.path).resolve()
+    stories_root = resolve_stories_root(args.path)
 
     # 重新解析：优先 stories_root 下的 .current-novel
     if not novel_path:

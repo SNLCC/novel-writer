@@ -29,39 +29,10 @@ import sys
 from pathlib import Path
 from datetime import datetime
 
+from _utils import resolve_novel_path
+
 
 # ── 分区映射 ────────────────────────────────────────────────
-
-SECTION_MAP = {
-    "世界观-背景": ("1.1 时代背景", "### 1.2"),
-    "世界观-地理": ("1.2 地理与势力", "### 1.3"),
-    "世界观-力量": ("1.3 力量体系 / 规则", "### 1.4"),
-    "世界观-社会": ("1.4 社会结构", "## 二、"),
-    "核心规则": ("二、核心规则", "## 三、"),
-    "势力关系": ("三、家族 / 势力关系", "## 四、"),
-    "节奏法则": ("四、节奏法则", "## 五、"),
-    "禁忌": ("五、禁忌清单", None),
-}
-
-
-def resolve_novel_path(explicit_path):
-    if explicit_path:
-        novel_path = Path(explicit_path).resolve()
-        if novel_path.exists():
-            return novel_path
-        print(f"[ERROR] 目录不存在: {novel_path}")
-        sys.exit(1)
-    current_dir = Path.cwd()
-    pointer_file = current_dir / ".current-novel"
-    if pointer_file.exists():
-        target = pointer_file.read_text(encoding="utf-8").strip()
-        novel_path = Path(target)
-        if novel_path.exists():
-            return novel_path.resolve()
-    return current_dir
-
-
-# ── 去重逻辑 ────────────────────────────────────────────────
 
 def tokenize(text):
     """简单分词：按中文单字切分，过滤标点"""

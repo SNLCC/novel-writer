@@ -4,7 +4,9 @@
 
 skill 目录与用户数据**物理隔离**，更新不会影响用户创作成果：
 
-`
+> **v1.1.0 重要更新**：所有脚本现在自动探测项目根目录（通过 `.reasonix` / `.git` 标记），stories 数据默认写入可写的工作区，而非 skill 自身的只读路径。可通过 `--path` 参数或 `CODEX_STORIES_PATH` 环境变量覆盖。
+
+```
 skill 目录（更新时完全替换）          用户数据（永不触碰）
 ├── scripts/                          stories/
 ├── references/                       ├── .shared/          ← 积累的知识库

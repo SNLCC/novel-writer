@@ -1,6 +1,6 @@
 ---
 name: novel-writer
-version: 1.0.0
+version: 1.1.0
 description: 自进化长篇小说创作助手。故事圣经、多层大纲、人物档案、场景档案、悬念追踪、线索管理、共享知识库七大系统联动。写的小说越多，Skill 自身越强。当用户需要创作长篇小说、保持设定一致性、优化节奏钩子时使用。
 ---
 
@@ -111,10 +111,10 @@ guide.py 输出什么？
 ## 快速开始
 
 ```bash
-python scripts/new_novel.py <小说名> --path ./stories   # 创建 + 自动设为当前
-python scripts/list_novels.py --path ./stories           # 查看所有
-python scripts/list_novels.py --path ./stories --set <名> # 切换当前
-python scripts/guide.py                                  # 诊断状态
+python scripts/new_novel.py <小说名>                     # 创建 + 自动设为当前（stories 自动定位到项目根目录）
+python scripts/list_novels.py                             # 查看所有
+python scripts/list_novels.py --set <名>                  # 切换当前
+python scripts/guide.py                                   # 诊断状态
 ```
 
 ---

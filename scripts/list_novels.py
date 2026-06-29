@@ -6,6 +6,8 @@ list_novels.py — 列出所有小说项目及其状态
     python list_novels.py [--path <stories目录>] [--set <小说名>]
 
 --set 将指定小说设为「当前小说」（同步更新 master-index.md 和 .current-novel）。
+
+默认 stories 目录自动探测到项目根目录。
 """
 
 import argparse
@@ -13,7 +15,7 @@ import re
 from pathlib import Path
 from datetime import datetime
 
-
+from _utils import resolve_stories_root
 def parse_meta(meta_file: Path) -> dict:
     info = {
         "title": meta_file.parent.name,
@@ -178,11 +180,11 @@ def list_novels(stories_path: Path):
 
 def main():
     parser = argparse.ArgumentParser(description="列出所有小说项目")
-    parser.add_argument("--path", default="./stories", help="stories 目录路径（默认 ./stories）")
+    parser.add_argument("--path", default=None, help="stories 目录路径（默认自动探测到项目根目录）")
     parser.add_argument("--set", default=None, help="设为当前小说", metavar="NOVEL_NAME")
     args = parser.parse_args()
 
-    stories_path = Path(args.path).resolve()
+    stories_path = resolve_stories_root(args.path)
 
     if args.set:
         set_current_novel(stories_path, args.set)

@@ -3,23 +3,11 @@
 evolve.py — Skill 自我进化引擎
 
 用法:
-    python evolve.py [--path <stories目录>]
+    python evolve.py [--path <stories目录>] [--apply]
 
-核心理念：
-    写的小说越多，skill 自身越强。本脚本分析所有已完成小说的数据，
-    生成可操作的升级建议，自动更新 skill 的参考文档。
+分析多部小说的数据，生成进化建议，自动优化参考文档和策略。
 
-进化维度：
-    1. 钩子效果分析 —— 哪种钩子类型留存率最高？
-    2. 节奏配方验证 —— 哪种章节字数/爽点密度组合最优？
-    3. 人物弧线模式 —— 哪种 Want/Need 组合最有效？
-    4. 平台策略优化 —— 各平台的最佳实践是否调整？
-    5. 参考文档自动更新 —— 将验证过的模式写入 references/
-
-输出：
-    - 进化报告（终端输出）
-    - 自动更新 references/ 中的参考文档
-    - 追加到 .shared/pattern-library.md
+默认 stories 目录自动探测到项目根目录。
 """
 
 import argparse
@@ -27,6 +15,8 @@ import re
 import sys
 from pathlib import Path
 from datetime import datetime
+
+from _utils import resolve_stories_root
 
 
 def scan_novel_deep(nd):
@@ -270,11 +260,11 @@ def apply_evolution(stories_path, insights):
 
 def main():
     parser = argparse.ArgumentParser(description="Skill 自我进化引擎")
-    parser.add_argument("--path", default="./stories", help="stories 目录路径")
+    parser.add_argument("--path", default=None, help="stories 目录路径（默认自动探测到项目根目录）")
     parser.add_argument("--apply", action="store_true", help="自动应用进化建议到参考文档")
     args = parser.parse_args()
 
-    stories_path = Path(args.path).resolve()
+    stories_path = resolve_stories_root(args.path)
     if not stories_path.exists():
         print(f"[ERROR] stories 目录不存在: {stories_path}")
         sys.exit(1)

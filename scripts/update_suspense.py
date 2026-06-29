@@ -16,22 +16,11 @@ import argparse
 import re
 import sys
 from pathlib import Path
+from _utils import resolve_novel_path
 
 
-def resolve_novel_path(explicit_path):
-    if explicit_path:
-        n = Path(explicit_path).resolve()
-        if n.exists():
-            return n
-        print(f"[ERROR] 目录不存在: {n}")
-        sys.exit(1)
-    cwd = Path.cwd()
-    pf = cwd / ".current-novel"
-    if pf.exists():
-        n = Path(pf.read_text(encoding="utf-8").strip())
-        if n.exists():
-            return n.resolve()
-    return cwd
+# ── 路径解析 ────────────────────────────────────────────────
+# resolve_novel_path 已由 _utils 模块统一管理
 
 
 def parse_suspense_entries(content):

@@ -19,20 +19,7 @@ import re
 import sys
 from pathlib import Path
 
-
-def resolve_novel_path(explicit_path):
-    if explicit_path:
-        n = Path(explicit_path).resolve()
-        if n.exists():
-            return n
-        return None
-    cwd = Path.cwd()
-    pf = cwd / ".current-novel"
-    if pf.exists():
-        n = Path(pf.read_text(encoding="utf-8").strip())
-        if n.exists():
-            return n.resolve()
-    return None
+from _utils import require_novel_path
 
 
 def count_real_files(novel_path):
@@ -161,10 +148,7 @@ def main():
     parser.add_argument("--novel", default=None, help="小说项目目录")
     args = parser.parse_args()
 
-    novel_path = resolve_novel_path(args.novel)
-    if not novel_path:
-        print("[ERROR] 无法定位小说项目。请指定 --novel 或设置当前小说。")
-        sys.exit(1)
+    novel_path = require_novel_path(args.novel)
 
     chapter_file = novel_path / "chapters" / f"ch-{args.chapter:02d}.md"
     ok, issues = validate(chapter_file, novel_path)

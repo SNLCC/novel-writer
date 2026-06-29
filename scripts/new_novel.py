@@ -6,6 +6,8 @@ new_novel.py — 创建新小说项目骨架
     python new_novel.py <小说名> [--path <stories目录>] [--template <模板路径>]
 
 创建后自动将新项目设为 .current-novel（当前小说）。
+
+默认 stories 目录自动探测到项目根目录，不再固定在 ./stories。
 """
 
 import argparse
@@ -14,6 +16,8 @@ import sys
 from pathlib import Path
 from datetime import datetime
 import re
+
+from _utils import resolve_stories_root, get_template_path
 
 
 def normalize_name(name: str) -> str:
@@ -130,18 +134,13 @@ def create_novel(novel_name: str, stories_path: Path, template_path: Path) -> Pa
 def main():
     parser = argparse.ArgumentParser(description="创建新小说项目骨架")
     parser.add_argument("name", help="小说名称")
-    parser.add_argument("--path", default="./stories", help="stories 目录路径（默认 ./stories）")
+    parser.add_argument("--path", default=None, help="stories 目录路径（默认自动探测到项目根目录）")
     parser.add_argument("--template", default=None, help="模板路径（默认自动查找）")
     args = parser.parse_args()
 
-    stories_path = Path(args.path).resolve()
+    stories_path = resolve_stories_root(args.path)
     stories_path.mkdir(parents=True, exist_ok=True)
-
-    if args.template:
-        template_path = Path(args.template).resolve()
-    else:
-        script_dir = Path(__file__).resolve().parent
-        template_path = script_dir.parent / "assets" / "novel-template"
+    template_path = get_template_path(args.template)
 
     create_novel(args.name, stories_path, template_path)
 

@@ -17,22 +17,11 @@ import sys
 from pathlib import Path
 from datetime import datetime
 
+from _utils import resolve_novel_path
 
-def resolve_novel_path(explicit_path):
-    if explicit_path:
-        novel_path = Path(explicit_path).resolve()
-        if novel_path.exists():
-            return novel_path
-        print(f"[ERROR] 目录不存在: {novel_path}")
-        sys.exit(1)
-    current_dir = Path.cwd()
-    pointer_file = current_dir / ".current-novel"
-    if pointer_file.exists():
-        target = pointer_file.read_text(encoding="utf-8").strip()
-        novel_path = Path(target)
-        if novel_path.exists():
-            return novel_path.resolve()
-    return current_dir
+
+# ── 路径解析 ────────────────────────────────────────────────
+# resolve_novel_path 已由 _utils 模块统一管理
 
 
 def find_arc_for_chapter(arc_dir, chapter_num):

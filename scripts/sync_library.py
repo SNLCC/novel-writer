@@ -169,11 +169,12 @@ def update_library(stories_path, all_data, insights):
 
 def main():
     parser = argparse.ArgumentParser(description="从已完结小说提取模式到共享库")
-    parser.add_argument("--path", default="./stories", help="stories 目录路径")
+    parser.add_argument("--path", default=None, help="stories 目录路径（默认自动探测到项目根目录）")
     parser.add_argument("--novel", default=None, help="仅分析指定小说")
     args = parser.parse_args()
 
-    stories_path = Path(args.path).resolve()
+    from _utils import resolve_stories_root
+    stories_path = resolve_stories_root(args.path)
     if not stories_path.exists():
         print(f"[ERROR] stories 目录不存在: {stories_path}")
         sys.exit(1)
